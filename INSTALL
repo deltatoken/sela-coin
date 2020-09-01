@@ -1,0 +1,9 @@
+Building Sela
+
+See doc/readme-qt.rst for instructions on building Sela-Qt,
+the intended-for-end-users, nice-graphical-interface, reference
+implementation of Sela.
+
+See doc/build-*.txt for instructions on building selad,
+the intended-for-services, no-graphical-interface, reference
+implementation of Sela.
