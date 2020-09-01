@@ -1,7 +1,7 @@
 Sela integration/staging tree
 ================================
 
-http://www.sela.org
+http://www.sela-coin.com
 
 Copyright (c) 2009-2014 Bitcoin Developers
 Copyright (c) 2011-2014 Sela Developers
@@ -14,12 +14,12 @@ Sela is a lite version of Bitcoin using scrypt as a proof-of-work algorithm.
  - subsidy halves in 840k blocks (~4 years)
  - ~84 million total coins
 
-The rest is the same as Bitcoin.
- - 50 coins per block
+
+ - 200 coins per block
  - 2016 blocks to retarget difficulty
 
 For more information, as well as an immediately useable, binary version of
-the Sela client sofware, see http://www.sela.org.
+the Sela client sofware, see http://www.sela-coin.com
 
 License
 -------
@@ -45,7 +45,7 @@ match the project's coding conventions (see `doc/coding.txt`) or are
 controversial.
 
 The `master` branch is regularly built and tested, but is not guaranteed to be
-completely stable. [Tags](https://github.com/sela-project/sela/tags) are created
+completely stable. [Tags](https://github.com/deltatoken/sela-coin/tags) are created
 regularly to indicate new official, stable release versions of Sela.
 
 Testing
