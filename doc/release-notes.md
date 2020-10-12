@@ -1,123 +1,133 @@
-0.8.7.5 changes
-=============
-- openssl-1.0.1k or older versions patched for CVE-2014-8275 broke compatibility with Bitcoin and Sela.
-  This update patches Sela to maintain compatibility with CVE-2014-8275 patched openssl.
-- If you are running v0.8.7.4 as distributed by sela.org you do not need to upgrade.
-  The binaries distributed on sela.org contain their own copy of openssl so they are unaffected by this issue.
+SelaCoin Core version 0.14.0.2
+==========================
 
-0.8.7.4 changes
-=============
-- Enforce v2 blocks at height 710000 on mainnet, 400000 on testnet
-- Add `-maxorphantx=<n>` and `-maxorphanblocks=<n>` options for control over the maximum orphan transactions and blocks
-- Stricter memory limits on CNode
-- Upgrade OpenSSL to 1.0.1i (see https://www.openssl.org/news/secadv_20140806.txt - just to be sure, no critical issues
+Release is now available from:
 
-0.8.7.2 changes
-=============
-- Mac and Windows Official Gitian Builds: upgrade to openssl-1.0.1h for CVE-2014-0224
-                   Linux Gitian build uses Lucid 0.9.8k-7ubuntu8.18
+  <https://www.selacoin.org/downloads/#wallets>
 
-0.8.7.1 changes
-=============
-- Mac and Windows Official Gitian Builds: upgrade to openssl-1.0.1g for CVE-2014-0160
-                   Linux was not vulnerable with Lucid openssl-0.9.8k
-                   Older versions were only vulnerable with rarely used RPC SSL
-- If you build from source, be sure that your openssl is patched for CVE-2014-0160.
-- Upgrade openssl, qt, miniupnpc, zlib, libpng, qrencode
-- Many bug fixes from Bitcoin 0.8.7rc stable branch
-    including transaction malleability mitigation backports from 0.9
-- Add testnet checkpoints
-- Add new testnet seed
+This is a new minor version release, bringing various bugfixes.
 
-0.8.6.2 changes
-=============
+Please report bugs using the issue tracker at github:
 
-- Windows only: Fixes issue where network connectivity can fail.
+  <https://github.com/selacoinpay/selacoin/issues>
 
-- Cleanup of SSE2 scrypt detection.
 
-- Minor fixes:
-  - s/Bitcoin/Sela/ in the Coin Control example
-  - Fix custom build on MacOS X 10.9
-  - Fix QT5 custom build
-  - Update Debian build instructions
-  - Update Homebrew build 
+Upgrading and downgrading
+=========================
 
-0.8.6.1 changes
-=============
+How to Upgrade
+--------------
 
-- Coin Control - experts only GUI selection of inputs before you send a transaction
+If you are running an older version, shut it down. Wait until it has completely
+shut down (which might take a few minutes for older versions), then run the
+installer (on Windows) or just copy over /Applications/SelaCoin-Qt (on Mac) or
+selacoind/selacoin-qt (on Linux). If you upgrade after DIP0003 activation and you were
+using version < 0.13 you will have to reindex (start with -reindex-chainstate
+or -reindex) to make sure your wallet has all the new data synced. Upgrading from
+version 0.13 should not require any additional actions.
 
-- Disable Wallet - reduces memory requirements, helpful for miner or relay nodes
+Downgrade warning
+-----------------
 
-- 20x reduction in default mintxfee.
+### Downgrade to a version < 0.14.0.0
 
-- Up to 50% faster PoW validation, faster sync and reindexing.
+Downgrading to a version smaller than 0.14 is not supported anymore as DIP8 has
+activated on mainnet and testnet.
 
-- Peers older than protocol version 70002 are disconnected.  0.8.3.7 is the oldest compatible client.
+### Downgrade to versions 0.14.0.0 - 0.14.0.1
 
-- Internal miner added back to Sela.  setgenerate now works, although it is generally a bad idea as it is significantly slower than external CPU miners.
+Downgrading to older 0.14 releases is fully supported but is not
+recommended unless you have some serious issues with version 0.14.0.2.
 
-- New RPC commands: getbestblockhash and verifychain
-
-- Improve fairness of the high priority transaction space per block
-
-- OSX block chain database corruption fixes
-  - Update leveldb to 1.13
-  - Use fcntl with `F_FULLSYNC` instead of fsync on OSX
-  - Use native Darwin memory barriers
-  - Replace use of mmap in leveldb for improved reliability (only on OSX)
-
-- Fix nodes forwarding transactions with empty vins and getting banned
-
-- Network code performance and robustness improvements
-
-- Additional debug.log logging for diagnosis of network problems, log timestamps by default
-
-- Fix rare GUI crash on send
-
-0.8.5.1 changes
+Notable changes
 ===============
 
-Workaround negative version numbers serialization bug.
+Performance improvements
+------------------------
+Slow startup times were observed in older versions. This was due to sub-optimal handling of old
+deterministic masternode lists which caused the loading of too many lists into memory. This should be
+fixed now.
 
-Fix out-of-bounds check (Sela currently does not use this codepath, but we apply this
-patch just to match Bitcoin 0.8.5.)
+Fixed excessive memory use
+--------------------------
+Multiple issues were found which caused excessive use of memory in some situations, especially when
+a full reindex was performed, causing the node to crash even when enough RAM was available. This should
+be fixed now.
 
-0.8.4.1 changes
-===============
+Fixed out-of-sync masternode list UI
+------------------------------------
+The masternode tab, which shows the masternode list, was not always up-to-date as it missed some internal
+updates. This should be fixed now.
 
-CVE-2013-5700 Bloom: filter crash issue - Sela 0.8.3.7 disabled bloom by default so was 
-unaffected by this issue, but we include their patches anyway just in case folks want to 
-enable bloomfilter=1.
+0.14.0.2 Change log
+===================
 
-CVE-2013-4165: RPC password timing guess vulnerability
+See detailed [set of changes](https://github.com/selacoinpay/selacoin/compare/v0.14.0.1...selacoinpay:v0.14.0.2).
 
-CVE-2013-4627: Better fix for the fill-memory-with-orphaned-tx attack
+- [`d2ff63e8d`](https://github.com/selacoinpay/selacoin/commit/d2ff63e8d) Use std::unique_ptr for mnList in CSimplifiedMNList (#3014)
+- [`321bbf5af`](https://github.com/selacoinpay/selacoin/commit/321bbf5af) Fix excessive memory use when flushing chainstate and EvoDB (#3008)
+- [`0410259dd`](https://github.com/selacoinpay/selacoin/commit/0410259dd) Fix 2 common Travis failures which happen when Travis has network issues (#3003)
+- [`8d763c144`](https://github.com/selacoinpay/selacoin/commit/8d763c144) Only load signingActiveQuorumCount + 1 quorums into cache (#3002)
+- [`2dc1b06ec`](https://github.com/selacoinpay/selacoin/commit/2dc1b06ec) Remove skipped denom from the list on tx commit (#2997)
+- [`dff2c851d`](https://github.com/selacoinpay/selacoin/commit/dff2c851d) Update manpages for 0.14.0.2 (#2999)
+- [`46c4f5844`](https://github.com/selacoinpay/selacoin/commit/46c4f5844) Use Travis stages instead of custom timeouts (#2948)
+- [`49c37b82a`](https://github.com/selacoinpay/selacoin/commit/49c37b82a) Back off for 1m when connecting to quorum masternodes (#2975)
+- [`c1f756fd9`](https://github.com/selacoinpay/selacoin/commit/c1f756fd9) Multiple speed optimizations for deterministic MN list handling (#2972)
+- [`11699f540`](https://github.com/selacoinpay/selacoin/commit/11699f540) Process/keep messages/connections from PoSe-banned MNs (#2967)
+- [`c5415e746`](https://github.com/selacoinpay/selacoin/commit/c5415e746) Fix UI masternode list (#2966)
+- [`fb6f0e04d`](https://github.com/selacoinpay/selacoin/commit/fb6f0e04d) Bump version to 0.14.0.2 and copy release notes (#2991)
 
-Fix multi-block reorg transaction resurrection.
+Credits
+=======
 
-Fix non-standard disconnected transactions causing mempool orphans.  This bug could cause 
-nodes running with the -debug flag to crash, although it was lot less likely on Sela 
-as we disabled IsDust() in 0.8.3.x.
+Thanks to everyone who directly contributed to this release:
 
-Mac OSX: use 'FD_FULLSYNC' with LevelDB, which will (hopefully!) prevent the database 
-corruption issues have experienced on OSX.
+- Alexander Block (codablock)
+- UdjinM6
 
-Add height parameter to getnetworkhashps.
+As well as everyone that submitted issues and reviewed pull requests.
 
-Fix Norwegian and Swedish translations.
+Older releases
+==============
 
-Minor efficiency improvement in block peer request handling.
+SelaCoin was previously known as Darkcoin.
 
+Darkcoin tree 0.8.x was a fork of Litecoin tree 0.8, original name was XCoin
+which was first released on Jan/18/2014.
 
-0.8.3.7 changes
-===============
+Darkcoin tree 0.9.x was the open source implementation of masternodes based on
+the 0.8.x tree and was first released on Mar/13/2014.
 
-Fix CVE-2013-4627 denial of service, a memory exhaustion attack that could crash low-memory nodes.
+Darkcoin tree 0.10.x used to be the closed source implementation of Darksend
+which was released open source on Sep/25/2014.
 
-Fix a regression that caused excessive writing of the peers.dat file.
+SelaCoin Core tree 0.11.x was a fork of Bitcoin Core tree 0.9,
+Darkcoin was rebranded to SelaCoin.
 
-Add option for bloom filtering.
+SelaCoin Core tree 0.12.0.x was a fork of Bitcoin Core tree 0.10.
 
-Fix Hebrew translation.
+SelaCoin Core tree 0.12.1.x was a fork of Bitcoin Core tree 0.12.
+
+These release are considered obsolete. Old release notes can be found here:
+
+- [v0.14.0.1](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.14.0.1.md) released May/31/2019
+- [v0.14.0](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.14.0.md) released May/22/2019
+- [v0.13.3](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.13.3.md) released Apr/04/2019
+- [v0.13.2](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.13.2.md) released Mar/15/2019
+- [v0.13.1](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.13.1.md) released Feb/9/2019
+- [v0.13.0](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.13.0.md) released Jan/14/2019
+- [v0.12.3.4](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.12.3.4.md) released Dec/14/2018
+- [v0.12.3.3](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.12.3.3.md) released Sep/19/2018
+- [v0.12.3.2](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.12.3.2.md) released Jul/09/2018
+- [v0.12.3.1](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.12.3.1.md) released Jul/03/2018
+- [v0.12.2.3](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.12.2.3.md) released Jan/12/2018
+- [v0.12.2.2](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.12.2.2.md) released Dec/17/2017
+- [v0.12.2](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.12.2.md) released Nov/08/2017
+- [v0.12.1](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.12.1.md) released Feb/06/2017
+- [v0.12.0](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.12.0.md) released Aug/15/2015
+- [v0.11.2](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.11.2.md) released Mar/04/2015
+- [v0.11.1](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.11.1.md) released Feb/10/2015
+- [v0.11.0](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.11.0.md) released Jan/15/2015
+- [v0.10.x](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.10.0.md) released Sep/25/2014
+- [v0.9.x](https://github.com/selacoinpay/selacoin/blob/master/doc/release-notes/selacoin/release-notes-0.9.0.md) released Mar/13/2014
+

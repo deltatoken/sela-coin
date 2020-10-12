@@ -1,47 +1,77 @@
-Sela 0.8.x BETA
-====================
+SelaCoin Core 0.14.0
+=====================
 
-Copyright (c) 2009-2014 Bitcoin Developers
-Copyright (c) 2011-2014 Sela Developers
+This is the official reference wallet for SelaCoin digital currency and comprises the backbone of the SelaCoin peer-to-peer network. You can [download SelaCoin Core](https://www.selacoin.org/downloads/) or [build it yourself](#building) using the guides below.
 
-Distributed under the MIT/X11 software license, see the accompanying
-file COPYING or http://www.opensource.org/licenses/mit-license.php.
-This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](http://www.openssl.org/). This product includes
-cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.
-
-
-Intro
+Running
 ---------------------
-Sela is a free open source peer-to-peer electronic cash system that is
-completely decentralized, without the need for a central server or trusted
-parties.  Users hold the crypto keys to their own money and transact directly
-with each other, with the help of a P2P network to check for double-spending.
+The following are some helpful notes on how to run SelaCoin on your native platform.
 
-
-Setup
----------------------
-You need the Qt4 run-time libraries to run Sela-Qt. On Debian or Ubuntu:
-	`sudo apt-get install libqtgui4`
+### Unix
 
 Unpack the files into a directory and run:
 
-- bin/32/sela-qt (GUI, 32-bit)
-- bin/32/selad (headless, 32-bit)
-- bin/64/sela-qt (GUI, 64-bit)
-- bin/64/selad (headless, 64-bit)
+- `bin/selacoin-qt` (GUI) or
+- `bin/selacoind` (headless)
 
-See the documentation at the [Sela Wiki](http://sela.info)
+### Windows
+
+Unpack the files into a directory, and then run selacoin-qt.exe.
+
+### OS X
+
+Drag SelaCoin-Qt to your applications folder, and then run SelaCoin-Qt.
+
+### Need Help?
+
+* See the [SelaCoin documentation](https://docs.selacoin.org)
 for help and more information.
+* See the [SelaCoin Developer Documentation](https://selacoin-docs.github.io/) 
+for technical specifications and implementation details.
+* Ask for help on [SelaCoin Nation Discord](http://selacoinchat.org)
+* Ask for help on the [SelaCoin Forum](https://selacoin.org/forum)
 
-
-Other Pages
+Building
 ---------------------
+The following are developer notes on how to build SelaCoin Core on your native platform. They are not complete guides, but include notes on the necessary libraries, compile flags, etc.
+
+- [OS X Build Notes](build-osx.md)
 - [Unix Build Notes](build-unix.md)
-- [OSX Build Notes](build-osx.md)
-- [Windows Build Notes](build-msw.md)
-- [Coding Guidelines](coding.md)
-- [Release Process](release-process.md)
+- [Windows Build Notes](build-windows.md)
+- [OpenBSD Build Notes](build-openbsd.md)
+- [Gitian Building Guide](gitian-building.md)
+
+Development
+---------------------
+The SelaCoin Core repo's [root README](/README.md) contains relevant information on the development process and automated testing.
+
+- [Developer Notes](developer-notes.md)
 - [Release Notes](release-notes.md)
-- [Multiwallet Qt Development](multiwallet-qt.md)
-- [Unit Tests](unit-tests.md)
+- [Release Process](release-process.md)
+- Source Code Documentation ***TODO***
 - [Translation Process](translation_process.md)
+- [Translation Strings Policy](translation_strings_policy.md)
+- [Travis CI](travis-ci.md)
+- [Unauthenticated REST Interface](REST-interface.md)
+- [Shared Libraries](shared-libraries.md)
+- [BIPS](bips.md)
+- [Dnsseed Policy](dnsseed-policy.md)
+- [Benchmarking](benchmarking.md)
+
+### Resources
+* Discuss on the [SelaCoin Forum](https://selacoin.org/forum), in the Development & Technical Discussion board.
+* Discuss on [SelaCoin Nation Discord](http://selacoinchat.org)
+
+### Miscellaneous
+- [Assets Attribution](assets-attribution.md)
+- [Files](files.md)
+- [Reduce Traffic](reduce-traffic.md)
+- [Tor Support](tor.md)
+- [Init Scripts (systemd/upstart/openrc)](init.md)
+- [ZMQ](zmq.md)
+
+License
+---------------------
+Distributed under the [MIT software license](/COPYING).
+This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](https://www.openssl.org/). This product includes
+cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.

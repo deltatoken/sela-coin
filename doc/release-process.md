@@ -1,122 +1,288 @@
 Release Process
 ====================
 
-* * *
+* Update translations, see [translation_process.md](https://github.com/selacoinpay/selacoin/blob/master/doc/translation_process.md#synchronising-translations).
 
-###update (commit) version in sources
+* Update manpages, see [gen-manpages.sh](https://github.com/selacoinpay/selacoin/blob/master/contrib/devtools/README.md#gen-manpagessh).
+
+Before every minor and major release:
+
+* Update [bips.md](bips.md) to account for changes since the last release.
+* Update version in sources (see below)
+* Write release notes (see below)
+* Update `src/chainparams.cpp` nMinimumChainWork with information from the getblockchaininfo rpc.
+* Update `src/chainparams.cpp` defaultAssumeValid  with information from the getblockhash rpc.
+  - The selected value must not be orphaned so it may be useful to set the value two blocks back from the tip.
+  - Testnet should be set some tens of thousands back from the tip due to reorgs there.
+  - This update should be reviewed with a reindex-chainstate with assumevalid=0 to catch any defect
+     that causes rejection of blocks in the past history.
+
+Before every major release:
+
+* Update hardcoded [seeds](/contrib/seeds/README.md). TODO: Give example PR for SelaCoin
+* Update [`BLOCK_CHAIN_SIZE`](/src/qt/intro.cpp) to the current size plus some overhead.
+
+### First time / New builders
+
+If you're using the automated script (found in [contrib/gitian-build.py](/contrib/gitian-build.py)), then at this point you should run it with the "--setup" command. Otherwise ignore this.
+
+Check out the source code in the following directory hierarchy.
+
+	cd /path/to/your/toplevel/build
+	git clone https://github.com/selacoinpay/gitian.sigs.git
+	git clone https://github.com/selacoinpay/selacoin-detached-sigs.git
+	git clone https://github.com/devrandom/gitian-builder.git
+	git clone https://github.com/selacoinpay/selacoin.git
+
+### SelaCoin Core maintainers/release engineers, update (commit) version in sources
+
+- `configure.ac`:
+    - `_CLIENT_VERSION_MAJOR`
+    - `_CLIENT_VERSION_MINOR`
+    - `_CLIENT_VERSION_REVISION`
+    - Don't forget to set `_CLIENT_VERSION_IS_RELEASE` to `true`
+- `src/clientversion.h`: (this mirrors `configure.ac` - see issue #3539)
+    - `CLIENT_VERSION_MAJOR`
+    - `CLIENT_VERSION_MINOR`
+    - `CLIENT_VERSION_REVISION`
+    - Don't forget to set `CLIENT_VERSION_IS_RELEASE` to `true`
+- `doc/README.md` and `doc/README_windows.txt`
+- `doc/Doxyfile`: `PROJECT_NUMBER` contains the full version
+- `contrib/gitian-descriptors/*.yml`: usually one'd want to do this on master after branching off the release - but be sure to at least do it before a new major release
+
+Write release notes. git shortlog helps a lot, for example:
+
+    git shortlog --no-merges v(current version, e.g. 0.12.2)..v(new version, e.g. 0.12.3)
+
+Generate list of authors:
+
+    git log --format='%aN' "$*" | sort -ui | sed -e 's/^/- /'
+
+Tag version (or release candidate) in git
+
+    git tag -s v(new version, e.g. 0.12.3)
+
+### Setup and perform Gitian builds
+
+If you're using the automated script (found in [contrib/gitian-build.py](/contrib/gitian-build.py)), then at this point you should run it with the "--build" command. Otherwise ignore this.
+
+Setup Gitian descriptors:
+
+    pushd ./selacoin
+    export SIGNER=(your Gitian key, ie bluematt, sipa, etc)
+    export VERSION=(new version, e.g. 0.12.3)
+    git fetch
+    git checkout v${VERSION}
+    popd
+
+Ensure your gitian.sigs are up-to-date if you wish to gverify your builds against other Gitian signatures.
+
+    pushd ./gitian.sigs
+    git pull
+    popd
+
+Ensure gitian-builder is up-to-date:
+
+    pushd ./gitian-builder
+    git pull
+    popd
 
 
-	bitcoin-qt.pro
-	contrib/verifysfbinaries/verify.sh
-	doc/README*
-	share/setup.nsi
-	src/clientversion.h (change CLIENT_VERSION_IS_RELEASE to true)
+### Fetch and create inputs: (first time, or when dependency versions change)
 
-###tag version in git
+    pushd ./gitian-builder
+    mkdir -p inputs
+    wget -P inputs https://bitcoincore.org/cfields/osslsigncode-Backports-to-1.7.1.patch
+    wget -P inputs http://downloads.sourceforge.net/project/osslsigncode/osslsigncode/osslsigncode-1.7.1.tar.gz
+    popd
 
-	git tag -s v0.8.7
+Create the OS X SDK tarball, see the [OS X readme](README_osx.md) for details, and copy it into the inputs directory.
 
-###write release notes. git shortlog helps a lot, for example:
+### Optional: Seed the Gitian sources cache and offline git repositories
 
-	git shortlog --no-merges v0.7.2..v0.8.0
+By default, Gitian will fetch source files as needed. To cache them ahead of time:
 
-* * *
+    pushd ./gitian-builder
+    make -C ../selacoin/depends download SOURCES_PATH=`pwd`/cache/common
+    popd
 
-##perform gitian builds
+Only missing files will be fetched, so this is safe to re-run for each build.
 
- From a directory containing the sela source, gitian-builder and gitian.sigs
-  
-	export SIGNER=(your gitian key, ie bluematt, sipa, etc)
-	export VERSION=0.8.7
-	cd ./gitian-builder
+NOTE: Offline builds must use the --url flag to ensure Gitian fetches only from local URLs. For example:
 
- Fetch and build inputs: (first time, or when dependency versions change)
+    pushd ./gitian-builder
+    ./bin/gbuild --url selacoin=/path/to/selacoin,signature=/path/to/sigs {rest of arguments}
+    popd
 
-	mkdir -p inputs; cd inputs/
-	wget 'http://miniupnp.free.fr/files/download.php?file=miniupnpc-1.9.20140401.tar.gz' -O miniupnpc-1.9.20140401.tar.gz'
-	wget 'https://www.openssl.org/source/openssl-1.0.1k.tar.gz'
-	wget 'http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz'
-	wget 'http://zlib.net/zlib-1.2.8.tar.gz'
-	wget 'ftp://ftp.simplesystems.org/pub/libpng/png/src/history/libpng16/libpng-1.6.8.tar.gz'
-	wget 'http://fukuchi.org/works/qrencode/qrencode-3.4.3.tar.bz2'
-	wget 'http://downloads.sourceforge.net/project/boost/boost/1.55.0/boost_1_55_0.tar.bz2'
-	wget 'http://download.qt-project.org/official_releases/qt/4.8/4.8.5/qt-everywhere-opensource-src-4.8.5.tar.gz'
-	cd ..
-	./bin/gbuild ../sela/contrib/gitian-descriptors/boost-win32.yml
-	mv build/out/boost-*.zip inputs/
-	./bin/gbuild ../sela/contrib/gitian-descriptors/deps-win32.yml
-	mv build/out/bitcoin*.zip inputs/
-	./bin/gbuild ../sela/contrib/gitian-descriptors/qt-win32.yml
-	mv build/out/qt*.zip inputs/
+The gbuild invocations below <b>DO NOT DO THIS</b> by default.
 
- Build selad and sela-qt on Linux32, Linux64, and Win32:
-  
-	./bin/gbuild --commit sela=v${VERSION} ../sela/contrib/gitian-descriptors/gitian.yml
-	./bin/gsign --signer $SIGNER --release ${VERSION} --destination ../gitian.sigs/ ../sela/contrib/gitian-descriptors/gitian.yml
-	pushd build/out
-	zip -r sela-${VERSION}-linux.zip *
-	mv sela-${VERSION}-linux.zip ../../
-	popd
-	./bin/gbuild --commit sela=v${VERSION} ../sela/contrib/gitian-descriptors/gitian-win32.yml
-	./bin/gsign --signer $SIGNER --release ${VERSION}-win32 --destination ../gitian.sigs/ ../sela/contrib/gitian-descriptors/gitian-win32.yml
-	pushd build/out
-	zip -r sela-${VERSION}-win32.zip *
-	mv sela-${VERSION}-win32.zip ../../
-	popd
+### Build and sign SelaCoin Core for Linux, Windows, and OS X:
 
-  Build output expected:
+    pushd ./gitian-builder
+    ./bin/gbuild --memory 3000 --commit selacoin=v${VERSION} ../selacoin/contrib/gitian-descriptors/gitian-linux.yml
+    ./bin/gsign --signer $SIGNER --release ${VERSION}-linux --destination ../gitian.sigs/ ../selacoin/contrib/gitian-descriptors/gitian-linux.yml
+    mv build/out/selacoin-*.tar.gz build/out/src/selacoin-*.tar.gz ../
 
-  1. linux 32-bit and 64-bit binaries + source (sela-${VERSION}-linux-gitian.zip)
-  2. windows 32-bit binary, installer + source (sela-${VERSION}-win32-gitian.zip)
-  3. Gitian signatures (in gitian.sigs/${VERSION}[-win32]/(your gitian key)/
+    ./bin/gbuild --memory 3000 --commit selacoin=v${VERSION} ../selacoin/contrib/gitian-descriptors/gitian-win.yml
+    ./bin/gsign --signer $SIGNER --release ${VERSION}-win-unsigned --destination ../gitian.sigs/ ../selacoin/contrib/gitian-descriptors/gitian-win.yml
+    mv build/out/selacoin-*-win-unsigned.tar.gz inputs/selacoin-win-unsigned.tar.gz
+    mv build/out/selacoin-*.zip build/out/selacoin-*.exe ../
 
-repackage gitian builds for release as stand-alone zip/tar/installer exe
+    ./bin/gbuild --memory 3000 --commit selacoin=v${VERSION} ../selacoin/contrib/gitian-descriptors/gitian-osx.yml
+    ./bin/gsign --signer $SIGNER --release ${VERSION}-osx-unsigned --destination ../gitian.sigs/ ../selacoin/contrib/gitian-descriptors/gitian-osx.yml
+    mv build/out/selacoin-*-osx-unsigned.tar.gz inputs/selacoin-osx-unsigned.tar.gz
+    mv build/out/selacoin-*.tar.gz build/out/selacoin-*.dmg ../
+    popd
 
-**Linux .tar.gz:**
+Build output expected:
 
-	unzip sela-${VERSION}-linux-gitian.zip -d sela-${VERSION}-linux
-	tar czvf sela-${VERSION}-linux.tar.gz sela-${VERSION}-linux
-	rm -rf sela-${VERSION}-linux
+  1. source tarball (`selacoin-${VERSION}.tar.gz`)
+  2. linux 32-bit and 64-bit dist tarballs (`selacoin-${VERSION}-linux[32|64].tar.gz`)
+  3. windows 32-bit and 64-bit unsigned installers and dist zips (`selacoin-${VERSION}-win[32|64]-setup-unsigned.exe`, `selacoin-${VERSION}-win[32|64].zip`)
+  4. OS X unsigned installer and dist tarball (`selacoin-${VERSION}-osx-unsigned.dmg`, `selacoin-${VERSION}-osx64.tar.gz`)
+  5. Gitian signatures (in `gitian.sigs/${VERSION}-<linux|{win,osx}-unsigned>/(your Gitian key)/`)
 
-**Windows .zip and setup.exe:**
+### Verify other gitian builders signatures to your own. (Optional)
 
-	unzip sela-${VERSION}-win32-gitian.zip -d sela-${VERSION}-win32
-	mv sela-${VERSION}-win32/sela-*-setup.exe .
-	zip -r sela-${VERSION}-win32.zip bitcoin-${VERSION}-win32
-	rm -rf sela-${VERSION}-win32
+Add other gitian builders keys to your gpg keyring, and/or refresh keys.
 
-**Perform Mac build:**
+    gpg --import selacoin/contrib/gitian-keys/*.pgp
+    gpg --refresh-keys
 
-  OSX binaries are created on a dedicated 32-bit, OSX 10.6.8 machine.
-  Sela 0.8.x is built with MacPorts.  0.9.x will be Homebrew only.
+Verify the signatures
 
-	qmake RELEASE=1 USE_UPNP=1 USE_QRCODE=1
-	make
-	export QTDIR=/opt/local/share/qt4  # needed to find translations/qt_*.qm files
-	T=$(contrib/qt_translations.py $QTDIR/translations src/qt/locale)
-	python2.7 share/qt/clean_mac_info_plist.py
-	python2.7 contrib/macdeploy/macdeployqtplus Sela-Qt.app -add-qt-tr $T -dmg -fancy contrib/macdeploy/fancy.plist
+    pushd ./gitian-builder
+    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-linux ../selacoin/contrib/gitian-descriptors/gitian-linux.yml
+    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-win-unsigned ../selacoin/contrib/gitian-descriptors/gitian-win.yml
+    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-osx-unsigned ../selacoin/contrib/gitian-descriptors/gitian-osx.yml
+    popd
 
- Build output expected: Sela-Qt.dmg
-
-###Next steps:
-
-* Code-sign Windows -setup.exe (in a Windows virtual machine) and
-  OSX Bitcoin-Qt.app (Note: only Gavin has the code-signing keys currently)
-
-* update sela.org version
-  make sure all OS download links go to the right versions
-
-* update forum version
-
-* update wiki download links
+### Next steps:
 
 Commit your signature to gitian.sigs:
 
-	pushd gitian.sigs
-	git add ${VERSION}/${SIGNER}
-	git add ${VERSION}-win32/${SIGNER}
-	git commit -a
-	git push  # Assuming you can push to the gitian.sigs tree
-	popd
+    pushd gitian.sigs
+    git add ${VERSION}-linux/${SIGNER}
+    git add ${VERSION}-win-unsigned/${SIGNER}
+    git add ${VERSION}-osx-unsigned/${SIGNER}
+    git commit -a
+    git push  # Assuming you can push to the gitian.sigs tree
+    popd
 
+Codesigner only: Create Windows/OS X detached signatures:
+- Only one person handles codesigning. Everyone else should skip to the next step.
+- Only once the Windows/OS X builds each have 3 matching signatures may they be signed with their respective release keys.
+
+Codesigner only: Sign the osx binary:
+
+    transfer selacoincore-osx-unsigned.tar.gz to osx for signing
+    tar xf selacoincore-osx-unsigned.tar.gz
+    ./detached-sig-create.sh -s "Key ID"
+    Enter the keychain password and authorize the signature
+    Move signature-osx.tar.gz back to the gitian host
+
+Codesigner only: Sign the windows binaries:
+
+    tar xf selacoincore-win-unsigned.tar.gz
+    ./detached-sig-create.sh -key /path/to/codesign.key
+    Enter the passphrase for the key when prompted
+    signature-win.tar.gz will be created
+
+Codesigner only: Commit the detached codesign payloads:
+
+    cd ~/selacoincore-detached-sigs
+    checkout the appropriate branch for this release series
+    rm -rf *
+    tar xf signature-osx.tar.gz
+    tar xf signature-win.tar.gz
+    git add -a
+    git commit -m "point to ${VERSION}"
+    git tag -s v${VERSION} HEAD
+    git push the current branch and new tag
+
+Non-codesigners: wait for Windows/OS X detached signatures:
+
+- Once the Windows/OS X builds each have 3 matching signatures, they will be signed with their respective release keys.
+- Detached signatures will then be committed to the [selacoin-detached-sigs](https://github.com/selacoinpay/selacoin-detached-sigs) repository, which can be combined with the unsigned apps to create signed binaries.
+
+Create (and optionally verify) the signed OS X binary:
+
+    pushd ./gitian-builder
+    ./bin/gbuild -i --commit signature=v${VERSION} ../selacoin/contrib/gitian-descriptors/gitian-osx-signer.yml
+    ./bin/gsign --signer $SIGNER --release ${VERSION}-osx-signed --destination ../gitian.sigs/ ../selacoin/contrib/gitian-descriptors/gitian-osx-signer.yml
+    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-osx-signed ../selacoin/contrib/gitian-descriptors/gitian-osx-signer.yml
+    mv build/out/selacoin-osx-signed.dmg ../selacoin-${VERSION}-osx.dmg
+    popd
+
+Create (and optionally verify) the signed Windows binaries:
+
+    pushd ./gitian-builder
+    ./bin/gbuild -i --commit signature=v${VERSION} ../selacoin/contrib/gitian-descriptors/gitian-win-signer.yml
+    ./bin/gsign --signer $SIGNER --release ${VERSION}-win-signed --destination ../gitian.sigs/ ../selacoin/contrib/gitian-descriptors/gitian-win-signer.yml
+    ./bin/gverify -v -d ../gitian.sigs/ -r ${VERSION}-win-signed ../selacoin/contrib/gitian-descriptors/gitian-win-signer.yml
+    mv build/out/selacoin-*win64-setup.exe ../selacoin-${VERSION}-win64-setup.exe
+    mv build/out/selacoin-*win32-setup.exe ../selacoin-${VERSION}-win32-setup.exe
+    popd
+
+Commit your signature for the signed OS X/Windows binaries:
+
+    pushd gitian.sigs
+    git add ${VERSION}-osx-signed/${SIGNER}
+    git add ${VERSION}-win-signed/${SIGNER}
+    git commit -a
+    git push  # Assuming you can push to the gitian.sigs tree
+    popd
+
+### After 3 or more people have gitian-built and their results match:
+
+- Create `SHA256SUMS.asc` for the builds, and GPG-sign it:
+
+```bash
+sha256sum * > SHA256SUMS
+```
+
+The list of files should be:
+```
+selacoin-${VERSION}-aarch64-linux-gnu.tar.gz
+selacoin-${VERSION}-arm-linux-gnueabihf.tar.gz
+selacoin-${VERSION}-i686-pc-linux-gnu.tar.gz
+selacoin-${VERSION}-x86_64-linux-gnu.tar.gz
+selacoin-${VERSION}-osx64.tar.gz
+selacoin-${VERSION}-osx.dmg
+selacoin-${VERSION}.tar.gz
+selacoin-${VERSION}-win32-setup.exe
+selacoin-${VERSION}-win32.zip
+selacoin-${VERSION}-win64-setup.exe
+selacoin-${VERSION}-win64.zip
+```
+The `*-debug*` files generated by the gitian build contain debug symbols
+for troubleshooting by developers. It is assumed that anyone that is interested
+in debugging can run gitian to generate the files for themselves. To avoid
+end-user confusion about which file to pick, as well as save storage
+space *do not upload these to the selacoin.org server*.
+
+- GPG-sign it, delete the unsigned file:
+```
+gpg --digest-algo sha256 --clearsign SHA256SUMS # outputs SHA256SUMS.asc
+rm SHA256SUMS
+```
+(the digest algorithm is forced to sha256 to avoid confusion of the `Hash:` header that GPG adds with the SHA256 used for the files)
+Note: check that SHA256SUMS itself doesn't end up in SHA256SUMS, which is a spurious/nonsensical entry.
+
+- Upload zips and installers, as well as `SHA256SUMS.asc` from last step, to the selacoin.org server
+
+- Update selacoin.org
+
+- Announce the release:
+
+  - Release on SelaCoin forum: https://www.selacoin.org/forum/topic/official-announcements.54/
+
+  - Optionally Discord, twitter, reddit /r/SelaCoinpay, ... but this will usually sort out itself
+
+  - Notify flare so that he can start building [the PPAs](https://launchpad.net/~selacoin.org/+archive/ubuntu/selacoin)
+
+  - Archive release notes for the new version to `doc/release-notes/` (branch `master` and branch of the release)
+
+  - Create a [new GitHub release](https://github.com/selacoinpay/selacoin/releases/new) with a link to the archived release notes.
+
+  - Celebrate

@@ -1,33 +1,36 @@
-Name Sela
+Name "SelaCoin Core (-bit)"
 
 RequestExecutionLevel highest
 SetCompressor /SOLID lzma
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 0.8.7.5
-!define COMPANY "Sela project"
-!define URL http://www.sela.org/
+!define VERSION 1.0.0
+!define COMPANY "SelaCoin Core project"
+!define URL https://selacoin.org/
 
 # MUI Symbol Definitions
-!define MUI_ICON "../share/pixmaps/bitcoin.ico"
-!define MUI_WELCOMEFINISHPAGE_BITMAP "../share/pixmaps/nsis-wizard.bmp"
+!define MUI_ICON "/tmp/SelaCoin/share/pixmaps/bitcoin.ico"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "/tmp/SelaCoin/share/pixmaps/nsis-wizard.bmp"
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_RIGHT
-!define MUI_HEADERIMAGE_BITMAP "../share/pixmaps/nsis-header.bmp"
+!define MUI_HEADERIMAGE_BITMAP "/tmp/SelaCoin/share/pixmaps/nsis-header.bmp"
 !define MUI_FINISHPAGE_NOAUTOCLOSE
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT HKLM
 !define MUI_STARTMENUPAGE_REGISTRY_KEY ${REGKEY}
 !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME StartMenuGroup
-!define MUI_STARTMENUPAGE_DEFAULTFOLDER Sela
-!define MUI_FINISHPAGE_RUN $INSTDIR\sela-qt.exe
+!define MUI_STARTMENUPAGE_DEFAULTFOLDER "SelaCoin Core"
+!define MUI_FINISHPAGE_RUN $INSTDIR\selacoin-qt
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
-!define MUI_UNWELCOMEFINISHPAGE_BITMAP "../share/pixmaps/nsis-wizard.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "/tmp/SelaCoin/share/pixmaps/nsis-wizard.bmp"
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
 # Included files
 !include Sections.nsh
 !include MUI2.nsh
+!if "" == "64"
+!include x64.nsh
+!endif
 
 # Variables
 Var StartMenuGroup
@@ -45,14 +48,18 @@ Var StartMenuGroup
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile sela-${VERSION}-win32-setup.exe
-InstallDir $PROGRAMFILES\Sela
+OutFile /tmp/SelaCoin/selacoincore-${VERSION}-win-setup.exe
+!if "" == "64"
+InstallDir $PROGRAMFILES64\SelaCoinCore
+!else
+InstallDir $PROGRAMFILES\SelaCoinCore
+!endif
 CRCCheck on
 XPStyle on
 BrandingText " "
 ShowInstDetails show
-VIProductVersion ${VERSION}
-VIAddVersionKey ProductName Sela
+VIProductVersion ${VERSION}.0
+VIAddVersionKey ProductName "SelaCoin Core"
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
 VIAddVersionKey CompanyWebsite "${URL}"
@@ -66,19 +73,16 @@ ShowUninstDetails show
 Section -Main SEC0000
     SetOutPath $INSTDIR
     SetOverwrite on
-    File ../release/sela-qt.exe
-    File /oname=COPYING.txt ../COPYING
-    File /oname=readme.txt ../doc/README_windows.txt
+    File /tmp/SelaCoin/release/selacoin-qt
+    File /oname=COPYING.txt /tmp/SelaCoin/COPYING
+    File /oname=readme.txt /tmp/SelaCoin/doc/README_windows.txt
     SetOutPath $INSTDIR\daemon
-    File ../src/selad.exe
-    SetOutPath $INSTDIR\src
-    File /r /x *.exe /x *.o ../src\*.*
+    File /tmp/SelaCoin/release/selacoind
+    File /tmp/SelaCoin/release/selacoin-cli
+    SetOutPath $INSTDIR\doc
+    File /r /tmp/SelaCoin/doc\*.*
     SetOutPath $INSTDIR
     WriteRegStr HKCU "${REGKEY}\Components" Main 1
-
-    # Remove old wxwidgets-based-bitcoin executable and locales:
-    Delete /REBOOTOK $INSTDIR\sela.exe
-    RMDir /r /REBOOTOK $INSTDIR\locale
 SectionEnd
 
 Section -post SEC0001
@@ -87,8 +91,9 @@ Section -post SEC0001
     WriteUninstaller $INSTDIR\uninstall.exe
     !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
     CreateDirectory $SMPROGRAMS\$StartMenuGroup
-    CreateShortcut "$SMPROGRAMS\$StartMenuGroup\Sela.lnk" $INSTDIR\sela-qt.exe
-    CreateShortcut "$SMPROGRAMS\$StartMenuGroup\Uninstall Sela.lnk" $INSTDIR\uninstall.exe
+    CreateShortcut "$SMPROGRAMS\$StartMenuGroup\$(^Name).lnk" $INSTDIR\selacoin-qt
+    CreateShortcut "$SMPROGRAMS\$StartMenuGroup\SelaCoin Core (testnet, -bit).lnk" "$INSTDIR\selacoin-qt" "-testnet" "$INSTDIR\selacoin-qt" 1
+    CreateShortcut "$SMPROGRAMS\$StartMenuGroup\Uninstall $(^Name).lnk" $INSTDIR\uninstall.exe
     !insertmacro MUI_STARTMENU_WRITE_END
     WriteRegStr HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" DisplayName "$(^Name)"
     WriteRegStr HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" DisplayVersion "${VERSION}"
@@ -98,10 +103,10 @@ Section -post SEC0001
     WriteRegStr HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" UninstallString $INSTDIR\uninstall.exe
     WriteRegDWORD HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" NoModify 1
     WriteRegDWORD HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" NoRepair 1
-    WriteRegStr HKCR "sela" "URL Protocol" ""
-    WriteRegStr HKCR "sela" "" "URL:Sela"
-    WriteRegStr HKCR "sela\DefaultIcon" "" $INSTDIR\sela-qt.exe
-    WriteRegStr HKCR "sela\shell\open\command" "" '"$INSTDIR\sela-qt.exe" "%1"'
+    WriteRegStr HKCR "selacoincore" "URL Protocol" ""
+    WriteRegStr HKCR "selacoincore" "" "URL:SelaCoin"
+    WriteRegStr HKCR "selacoincore\DefaultIcon" "" $INSTDIR\selacoin-qt
+    WriteRegStr HKCR "selacoincore\shell\open\command" "" '"$INSTDIR\selacoin-qt" "%1"'
 SectionEnd
 
 # Macro for selecting uninstaller sections
@@ -119,19 +124,20 @@ done${UNSECTION_ID}:
 
 # Uninstaller sections
 Section /o -un.Main UNSEC0000
-    Delete /REBOOTOK $INSTDIR\sela-qt.exe
+    Delete /REBOOTOK $INSTDIR\selacoin-qt
     Delete /REBOOTOK $INSTDIR\COPYING.txt
     Delete /REBOOTOK $INSTDIR\readme.txt
     RMDir /r /REBOOTOK $INSTDIR\daemon
-    RMDir /r /REBOOTOK $INSTDIR\src
+    RMDir /r /REBOOTOK $INSTDIR\doc
     DeleteRegValue HKCU "${REGKEY}\Components" Main
 SectionEnd
 
 Section -un.post UNSEC0001
     DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)"
-    Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\Uninstall Sela.lnk"
-    Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\Sela.lnk"
-    Delete /REBOOTOK "$SMSTARTUP\Sela.lnk"
+    Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\Uninstall $(^Name).lnk"
+    Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\$(^Name).lnk"
+    Delete /REBOOTOK "$SMPROGRAMS\$StartMenuGroup\SelaCoin Core (testnet, -bit).lnk"
+    Delete /REBOOTOK "$SMSTARTUP\SelaCoin.lnk"
     Delete /REBOOTOK $INSTDIR\uninstall.exe
     Delete /REBOOTOK $INSTDIR\debug.log
     Delete /REBOOTOK $INSTDIR\db.log
@@ -139,7 +145,7 @@ Section -un.post UNSEC0001
     DeleteRegValue HKCU "${REGKEY}" Path
     DeleteRegKey /IfEmpty HKCU "${REGKEY}\Components"
     DeleteRegKey /IfEmpty HKCU "${REGKEY}"
-    DeleteRegKey HKCR "sela"
+    DeleteRegKey HKCR "selacoincore"
     RmDir /REBOOTOK $SMPROGRAMS\$StartMenuGroup
     RmDir /REBOOTOK $INSTDIR
     Push $R0
@@ -152,6 +158,15 @@ SectionEnd
 # Installer functions
 Function .onInit
     InitPluginsDir
+!if "" == "64"
+    ${If} ${RunningX64}
+      ; disable registry redirection (enable access to 64-bit portion of registry)
+      SetRegView 64
+    ${Else}
+      MessageBox MB_OK|MB_ICONSTOP "Cannot install 64-bit version on a 32-bit system."
+      Abort
+    ${EndIf}
+!endif
 FunctionEnd
 
 # Uninstaller functions
